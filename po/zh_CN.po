@@ -3514,6 +3514,10 @@ msgstr "   (%d) DSA (自定义用途)\n"
 msgid "   (%d) RSA (set your own capabilities)\n"
 msgstr "   (%d) RSA (自定义用途)\n"
 
+#, fuzzy, c-format
+msgid "   (%d) DSA and NTRU\n"
+msgstr "   (%d) DSA 和 ElGamal (默认)\n"
+
 #, c-format
 msgid "%s keys may be between %u and %u bits long.\n"
 msgstr "%s 密钥长度应在 %u 位与 %u 位之间。\n"

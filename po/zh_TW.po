@@ -3436,6 +3436,11 @@ msgstr "   (%d) DSA (你能自己設定性能)\n"
 msgid "   (%d) RSA (set your own capabilities)\n"
 msgstr "   (%d) RSA (你能自己設定性能)\n"
 
+#, fuzzy, c-format
+#| msgid "   (%d) DSA and Elgamal\n"
+msgid "   (%d) DSA and NTRU\n"
+msgstr "   (%d) DSA 和 Elgamal\n"
+
 #, c-format
 msgid "%s keys may be between %u and %u bits long.\n"
 msgstr "%s 金鑰的長度可能介於 %u 位元和 %u 位元之間.\n"

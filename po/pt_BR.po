@@ -3689,6 +3689,10 @@ msgstr "   (%d) ElGamal (apenas criptografia)\n"
 msgid "   (%d) RSA (set your own capabilities)\n"
 msgstr "   (%d) ElGamal (apenas criptografia)\n"
 
+#, fuzzy, c-format
+msgid "   (%d) DSA and NTRU\n"
+msgstr "   (%d) DSA e ElGamal (padrão)\n"
+
 #, c-format
 msgid "%s keys may be between %u and %u bits long.\n"
 msgstr ""

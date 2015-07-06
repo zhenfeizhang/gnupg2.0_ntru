@@ -48,6 +48,7 @@ pubkey_letter( int algo )
       case PUBKEY_ALGO_DSA:	return 'D' ;
       case PUBKEY_ALGO_ECDSA:	return 'E' ;	/* ECC DSA (sign only)   */
       case PUBKEY_ALGO_ECDH:	return 'e' ;	/* ECC DH (encrypt only) */
+      case PUBKEY_ALGO_NTRU:	return 'n' ;	/* ECC DH (encrypt only) */
       default: return '?';
     }
 }
@@ -57,6 +58,7 @@ pubkey_letter( int algo )
 void
 hash_public_key( gcry_md_hd_t md, PKT_public_key *pk )
 {
+	if (pk->pubkey_algo != PUBKEY_ALGO_NTRU){
   unsigned int n = 6;
   unsigned int nn[PUBKEY_MAX_NPKEY];
   byte *pp[PUBKEY_MAX_NPKEY];
@@ -123,6 +125,36 @@ hash_public_key( gcry_md_hd_t md, PKT_public_key *pk )
 	gcry_md_write ( md, pp[i], nn[i] );
 	xfree(pp[i]);
       }
+	}//(pk->pubkey_algo != PUBKEY_ALGO_NTRU)
+	else
+	{
+		unsigned char *buffer;
+		unsigned int max_buffer_len = 1200;
+		buffer = malloc(max_buffer_len*8);
+		printf("hashing NTRU, timestamp to be added\n");
+		gcry_sexp_sprint(pk->ntru_pkey, 1, buffer, max_buffer_len);
+
+		int buffer_len=0;
+		printf("buffer: ");
+		while(buffer[buffer_len]!='\0')
+		{
+			printf("%c",buffer[buffer_len]);
+			buffer_len++;
+		}
+		gcry_md_write ( md, buffer,  buffer_len );
+		printf("\n%d, %d\n", buffer_len,md->bufsize);
+
+		gcry_md_final (md);
+		buffer =  gcry_md_read (md, 0);
+		printf("hashed ntru public key: ");
+		buffer_len =0;
+		while(buffer[buffer_len]!='\0')
+		{
+			printf("%x ",buffer[buffer_len]);
+			buffer_len++;
+		}
+		printf("\nlength of the hash output: %d\n",buffer_len);
+	}
 }
 
 static gcry_md_hd_t

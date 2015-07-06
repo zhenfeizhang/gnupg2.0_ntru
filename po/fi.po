@@ -3696,6 +3696,10 @@ msgstr "   (%d) RSA (vain salaus)\n"
 msgid "   (%d) RSA (set your own capabilities)\n"
 msgstr "   (%d) RSA (vain salaus)\n"
 
+#, fuzzy, c-format
+msgid "   (%d) DSA and NTRU\n"
+msgstr "   (%d) DSA ja ElGamal (oletus)\n"
+
 #, c-format
 msgid "%s keys may be between %u and %u bits long.\n"
 msgstr ""

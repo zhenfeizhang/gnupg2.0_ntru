@@ -3493,6 +3493,10 @@ msgid "   (%d) RSA (set your own capabilities)\n"
 msgstr ""
 
 #, c-format
+msgid "   (%d) DSA and NTRU\n"
+msgstr ""
+
+#, c-format
 msgid "%s keys may be between %u and %u bits long.\n"
 msgstr ""
 

@@ -3696,6 +3696,10 @@ msgstr "   (%d) RSA (cifra solo)\n"
 msgid "   (%d) RSA (set your own capabilities)\n"
 msgstr "   (%d) RSA (cifra solo)\n"
 
+#, fuzzy, c-format
+msgid "   (%d) DSA and NTRU\n"
+msgstr "   (%d) DSA e ElGamal (default)\n"
+
 #, c-format
 msgid "%s keys may be between %u and %u bits long.\n"
 msgstr ""

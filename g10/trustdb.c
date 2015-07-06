@@ -817,6 +817,7 @@ update_ownertrust (PKT_public_key *pk, unsigned int new_trust )
 {
   TRUSTREC rec;
   int rc;
+  printf("updating own trust\n");
 
   if (trustdb_args.no_trustdb && opt.trust_model == TM_ALWAYS)
     return;

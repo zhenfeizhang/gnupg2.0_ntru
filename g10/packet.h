@@ -238,6 +238,7 @@ typedef struct {
     byte    trust_value;
     const byte *trust_regexp;
     gcry_mpi_t     pkey[PUBKEY_MAX_NPKEY];
+    gcry_sexp_t ntru_pkey;
 } PKT_public_key;
 
 /* Evaluates as true if the pk is disabled, and false if it isn't.  If
@@ -272,8 +273,10 @@ typedef struct {
 	byte iv[16]; /* initialization vector for CFB mode */
     } protect;
     gcry_mpi_t skey[PUBKEY_MAX_NSKEY];
+    gcry_sexp_t ntru_skey;
     u16 csum;		/* checksum */
 } PKT_secret_key;
+
 
 
 typedef struct {

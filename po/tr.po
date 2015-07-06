@@ -3577,6 +3577,10 @@ msgstr "   (%d) DSA (yeteneklerini belirtin)\n"
 msgid "   (%d) RSA (set your own capabilities)\n"
 msgstr "   (%d) RSA (yeteneklerini belirtin)\n"
 
+#, fuzzy, c-format
+msgid "   (%d) DSA and NTRU\n"
+msgstr "  (%d) DSA ve ElGamal (öntanımlı)\n"
+
 #, c-format
 msgid "%s keys may be between %u and %u bits long.\n"
 msgstr "%s anahtarları %u bit ile %u bit arasında olmalı.\n"

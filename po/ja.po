@@ -3460,6 +3460,11 @@ msgstr "   (%d) DSA (特性をあなた自身で設定)\n"
 msgid "   (%d) RSA (set your own capabilities)\n"
 msgstr "   (%d) RSA (特性をあなた自身で設定)\n"
 
+#, fuzzy, c-format
+#| msgid "   (%d) DSA and Elgamal\n"
+msgid "   (%d) DSA and NTRU\n"
+msgstr "   (%d) DSA と Elgamal\n"
+
 #, c-format
 msgid "%s keys may be between %u and %u bits long.\n"
 msgstr "%s 鍵は %u から %u ビットの長さで可能です。\n"

@@ -3539,6 +3539,11 @@ msgstr "   (%d) DSA (nastavit si vlastní použití)\n"
 msgid "   (%d) RSA (set your own capabilities)\n"
 msgstr "   (%d) RSA (nastavit si vlastní použití)\n"
 
+#, fuzzy, c-format
+#| msgid "   (%d) ECDSA and ECDH\n"
+msgid "   (%d) DSA and NTRU\n"
+msgstr "   (%d) ECDSA a ECDH\n"
+
 #, c-format
 msgid "%s keys may be between %u and %u bits long.\n"
 msgstr "klíč %s může mít délku v intervalu %u až %u bitů.\n"
@@ -6802,9 +6807,6 @@ msgstr ""
 
 #~ msgid "key %s: error changing passphrase: %s\n"
 #~ msgstr "klíč %s: chyba při měnění hesla: %s\n"
-
-#~ msgid "   (%d) ECDSA and ECDH\n"
-#~ msgstr "   (%d) ECDSA a ECDH\n"
 
 #~ msgid "  (%d) ECDSA (sign only)\n"
 #~ msgstr "  (%d) ECDSA (pouze pro podpis)\n"

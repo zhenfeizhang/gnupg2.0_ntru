@@ -79,13 +79,19 @@ void
 release_public_key_parts( PKT_public_key *pk )
 {
     int n, i;
-    n = pubkey_get_npkey( pk->pubkey_algo );
-    if( !n )
-	mpi_release(pk->pkey[0]);
-    for(i=0; i < n; i++ ) {
-	mpi_release( pk->pkey[i] );
-	pk->pkey[i] = NULL;
+    if (pk->pubkey_algo == PUBKEY_ALGO_NTRU)
+    {
+		n = pubkey_get_npkey( pk->pubkey_algo );
+		if( !n )
+		mpi_release(pk->pkey[0]);
+		for(i=0; i < n; i++ ) {
+		mpi_release( pk->pkey[i] );
+		pk->pkey[i] = NULL;
+		}
     }
+    else
+        gcry_sexp_release (pk->ntru_pkey);
+
     if (pk->prefs) {
         xfree (pk->prefs);
         pk->prefs = NULL;
@@ -260,14 +266,16 @@ void
 release_secret_key_parts( PKT_secret_key *sk )
 {
     int n, i;
-
+    if (sk->pubkey_algo!=PUBKEY_ALGO_NTRU){
     n = pubkey_get_nskey( sk->pubkey_algo );
     if( !n )
 	mpi_release(sk->skey[0]);
     for(i=0; i < n; i++ ) {
 	mpi_release( sk->skey[i] );
 	sk->skey[i] = NULL;
-    }
+    }}
+    else
+        gcry_sexp_release(sk->ntru_skey);
 }
 
 void

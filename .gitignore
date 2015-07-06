@@ -143,3 +143,7 @@ tools/watchgnupg
 tools/gpgtar
 /doc/gnupg1.info
 /po/gnupg.pot
+
+*~
+.cproject
+.project

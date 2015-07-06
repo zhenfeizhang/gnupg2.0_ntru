@@ -3602,6 +3602,11 @@ msgstr "   (%d) DSA (indiquez vous-même les capacités)\n"
 msgid "   (%d) RSA (set your own capabilities)\n"
 msgstr "   (%d) RSA (indiquez vous-même les capacités)\n"
 
+#, fuzzy, c-format
+#| msgid "   (%d) DSA and Elgamal\n"
+msgid "   (%d) DSA and NTRU\n"
+msgstr "   (%d) DSA et Elgamal\n"
+
 #, c-format
 msgid "%s keys may be between %u and %u bits long.\n"
 msgstr "les clefs %s peuvent faire une taille comprise entre %u et %u bits.\n"

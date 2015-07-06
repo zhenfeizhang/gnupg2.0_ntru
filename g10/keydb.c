@@ -597,6 +597,7 @@ keydb_update_keyblock (KEYDB_HANDLE hd, KBNODE kb)
 int
 keydb_insert_keyblock (KEYDB_HANDLE hd, KBNODE kb)
 {
+	printf("starting keydb_insert_keyblock\n");
     int rc = -1;
     int idx;
 
@@ -617,6 +618,7 @@ keydb_insert_keyblock (KEYDB_HANDLE hd, KBNODE kb)
     if (rc)
         return rc;
 
+
     switch (hd->active[idx].type) {
       case KEYDB_RESOURCE_TYPE_NONE:
       case KEYDB_RESOURCE_TYPE_KEYBOX:
@@ -628,6 +630,7 @@ keydb_insert_keyblock (KEYDB_HANDLE hd, KBNODE kb)
     }
 
     unlock_all (hd);
+	printf("finished keydb_insert_keyblock\n");
     return rc;
 }
 
@@ -705,6 +708,7 @@ keydb_locate_writable (KEYDB_HANDLE hd, const char *reserved)
       if (rc)
 	return rc;
     }
+
 
   for ( ; hd->current >= 0 && hd->current < hd->used; hd->current++)
     {

@@ -3610,6 +3610,11 @@ msgstr "   (%d) DSA (ställ in dina egna förmågor)\n"
 msgid "   (%d) RSA (set your own capabilities)\n"
 msgstr "   (%d) RSA (ställ in dina egna förmågor)\n"
 
+#, fuzzy, c-format
+#| msgid "   (%d) DSA and Elgamal\n"
+msgid "   (%d) DSA and NTRU\n"
+msgstr "   (%d) DSA och Elgamal\n"
+
 #, c-format
 msgid "%s keys may be between %u and %u bits long.\n"
 msgstr "%s-nycklar kan vara mellan %u och %u bitar långa.\n"

@@ -431,6 +431,7 @@ map_pk_openpgp_to_gcry (int algo)
     case PUBKEY_ALGO_ECDSA:     return 301 /*GCRY_PK_ECDSA*/;
     case PUBKEY_ALGO_ECDH:      return 302 /*GCRY_PK_ECDH*/;
     case PUBKEY_ALGO_ELGAMAL_E: return GCRY_PK_ELG;
+    case PUBKEY_ALGO_NTRU:		return GCRY_PK_NTRU;
     default: return algo;
     }
 }
@@ -449,6 +450,9 @@ openpgp_pk_test_algo( int algo )
 
   if (algo == PUBKEY_ALGO_ELGAMAL_E)
     algo = GCRY_PK_ELG;
+
+  if (algo == PUBKEY_ALGO_NTRU)
+    algo = PUBKEY_ALGO_NTRU;
 
   if (algo < 0 || algo > 110)
     return gpg_error (GPG_ERR_PUBKEY_ALGO);
@@ -510,6 +514,9 @@ openpgp_pk_algo_usage ( int algo )
           break;
       case PUBKEY_ALGO_ECDSA:
           use = PUBKEY_USAGE_CERT | PUBKEY_USAGE_SIG | PUBKEY_USAGE_AUTH;
+          break;
+      case PUBKEY_ALGO_NTRU:
+          use = PUBKEY_USAGE_ENC;
           break;
       default:
           break;
@@ -1392,7 +1399,8 @@ pubkey_get_npkey( int algo )
     return 0; /* We don't support the key format.  */
   else if (algo == PUBKEY_ALGO_ECDH)
     return 0; /* We don't support the key format.  */
-
+  else if (algo == PUBKEY_ALGO_NTRU)
+	return 1; /* NTRU has only one key component */
   if (algo == GCRY_PK_ELG_E)
     algo = GCRY_PK_ELG;
   else if (algo == GCRY_PK_RSA_E || algo == GCRY_PK_RSA_S)

@@ -248,7 +248,6 @@ int
 keyring_is_writable (void *token)
 {
   KR_NAME r = token;
-
   return r? (r->readonly || !access (r->fname, W_OK)) : 0;
 }
 
@@ -582,6 +581,7 @@ keyring_update_keyblock (KEYRING_HANDLE hd, KBNODE kb)
 int
 keyring_insert_keyblock (KEYRING_HANDLE hd, KBNODE kb)
 {
+	printf("starting keyring_insert_keyblock\n" );
     int rc;
     const char *fname;
 
@@ -611,14 +611,15 @@ keyring_insert_keyblock (KEYRING_HANDLE hd, KBNODE kb)
      */
     iobuf_close (hd->current.iobuf);
     hd->current.iobuf = NULL;
-
+    printf("before do copy\n");
     /* do the insert */
     rc = do_copy (1, fname, kb, hd->secret, 0, 0 );
+    printf("after do copy\n");
     if (!rc && !hd->secret && kr_offtbl)
       {
         update_offset_hash_table_from_kb (kr_offtbl, kb, 0);
       }
-
+	printf("finish keyring_insert_keyblock\n" );
     return rc;
 }
 
@@ -1365,9 +1366,11 @@ write_keyblock (IOBUF fp, KBNODE keyblock)
 {
   KBNODE kbctx = NULL, node;
   int rc;
-
+int counter =0;
   while ( (node = walk_kbnode (keyblock, &kbctx, 0)) )
     {
+	  printf("node: %d\n", counter);
+	  counter++;
       if (node->pkt->pkttype == PKT_RING_TRUST)
         continue; /* we write it later on our own */
 
@@ -1381,7 +1384,6 @@ write_keyblock (IOBUF fp, KBNODE keyblock)
         { /* always write a signature cache packet */
           PKT_signature *sig = node->pkt->pkt.signature;
           unsigned int cacheval = 0;
-
           if (sig->flags.checked && sig->digest_algo != DIGEST_ALGO_MD5)
             {
               cacheval |= 1;
@@ -1636,12 +1638,16 @@ do_copy (int mode, const char *fname, KBNODE root, int secret,
     if( mode == 1 ) { /* insert */
 	/* copy everything to the new file */
 	rc = copy_all_packets (fp, newfp);
+
 	if( rc != -1 ) {
 	    log_error("%s: copy to `%s' failed: %s\n",
 		      fname, tmpfname, g10_errstr(rc) );
+
 	    iobuf_close(fp);
+
             if (secret)
               unregister_secured_file (tmpfname);
+
 	    iobuf_cancel(newfp);
 	    goto leave;
 	}
@@ -1660,6 +1666,7 @@ do_copy (int mode, const char *fname, KBNODE root, int secret,
 	    iobuf_cancel(newfp);
 	    goto leave;
 	}
+
 	/* skip this keyblock */
 	assert( n_packets );
 	rc = skip_some_packets( fp, n_packets );
@@ -1676,6 +1683,7 @@ do_copy (int mode, const char *fname, KBNODE root, int secret,
 
     if( mode == 1 || mode == 3 ) { /* insert or update */
         rc = write_keyblock (newfp, root);
+
         if (rc) {
           iobuf_close(fp);
           if (secret)

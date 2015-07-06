@@ -3686,6 +3686,10 @@ msgstr "  (%d) RSA (hanya enkripsi)\n"
 msgid "   (%d) RSA (set your own capabilities)\n"
 msgstr "  (%d) RSA (hanya enkripsi)\n"
 
+#, fuzzy, c-format
+msgid "   (%d) DSA and NTRU\n"
+msgstr "  (%d) DSA dan ElGamal (baku)\n"
+
 #, c-format
 msgid "%s keys may be between %u and %u bits long.\n"
 msgstr ""

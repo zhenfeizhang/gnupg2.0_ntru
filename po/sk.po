@@ -3691,6 +3691,10 @@ msgstr "   (%d) RSA (len na ¹ifrovanie)\n"
 msgid "   (%d) RSA (set your own capabilities)\n"
 msgstr "   (%d) RSA (len na ¹ifrovanie)\n"
 
+#, fuzzy, c-format
+msgid "   (%d) DSA and NTRU\n"
+msgstr "   (%d) DSA a ElGamal (implicitný)\n"
+
 #, c-format
 msgid "%s keys may be between %u and %u bits long.\n"
 msgstr ""

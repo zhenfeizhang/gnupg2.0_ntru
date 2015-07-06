@@ -1388,6 +1388,8 @@ make_keysig_packet( PKT_signature **ret_sig, PKT_public_key *pk,
     int rc=0;
     gcry_md_hd_t md;
 
+   printf("within signture, algo id: %d\n",sk->pubkey_algo);
+
     assert( (sigclass >= 0x10 && sigclass <= 0x13) || sigclass == 0x1F
 	    || sigclass == 0x20 || sigclass == 0x18 || sigclass == 0x19
 	    || sigclass == 0x30 || sigclass == 0x28 );
@@ -1424,20 +1426,23 @@ make_keysig_packet( PKT_signature **ret_sig, PKT_public_key *pk,
 	  digest_algo = DIGEST_ALGO_MD5;
 	else if(sk->pubkey_algo==PUBKEY_ALGO_DSA)
 	  digest_algo = match_dsa_hash (gcry_mpi_get_nbits (sk->skey[1])/8);
+	else if (sk->pubkey_algo==PUBKEY_ALGO_NTRU)
+		printf("pubkey algo is ntru\n");
 	else
 	  digest_algo = DEFAULT_DIGEST_ALGO;
       }
 
     if ( gcry_md_open (&md, digest_algo, 0 ) )
       BUG ();
-
+    printf ("pk algo: %d\n",pk->pubkey_algo);
     /* Hash the public key certificate. */
     hash_public_key( md, pk );
-
+    printf("%d\n",md->buf[0]);
     if( sigclass == 0x18 || sigclass == 0x19 || sigclass == 0x28 )
       {
 	/* hash the subkey binding/backsig/revocation */
-	hash_public_key( md, subpk );
+        printf("subpk id: %d\n", subpk->pubkey_algo);
+        hash_public_key( md, subpk );
       }
     else if( sigclass != 0x1F && sigclass != 0x20 )
       {

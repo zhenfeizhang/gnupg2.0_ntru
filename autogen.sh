@@ -185,9 +185,9 @@ fi
 if check_version $AUTOMAKE $automake_vers_num $automake_vers; then
   check_version $ACLOCAL $automake_vers_num $autoconf_vers automake
 fi
-if check_version $GETTEXT $gettext_vers_num $gettext_vers; then
-  check_version $MSGMERGE $gettext_vers_num $gettext_vers gettext
-fi
+#if check_version $GETTEXT $gettext_vers_num $gettext_vers; then
+#  check_version $MSGMERGE $gettext_vers_num $gettext_vers gettext
+#fi
 
 if test "$DIE" = "yes"; then
     cat <<EOF

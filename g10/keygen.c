@@ -1022,13 +1022,16 @@ write_keybinding (KBNODE root, KBNODE pub_root,
     }
   if (!sub_pk)
     BUG();
-
+  printf("subkey to be binded\n");
+  gcry_sexp_dump(  sub_pk->ntru_pkey);
   /* Make the signature.  */
   oduap.usage = use;
   oduap.pk = sub_pk;
+  printf("begin signature\n");
   rc = make_keysig_packet (&sig, pri_pk, NULL, sub_pk, pri_sk, 0x18,
                            0, 0, timestamp, 0,
                            keygen_add_key_flags_and_expire, &oduap );
+  printf("finished signature\n");
   if (rc)
     {
       log_error ("make_keysig_packet failed: %s\n", g10_errstr(rc) );
@@ -1109,13 +1112,15 @@ genhelp_protect (DEK *dek, STRING2KEY *s2k, PKT_secret_key *sk)
 
   if (dek)
     {
+	  printf("protecting sk\n");
       sk->protect.algo = dek->algo;
       sk->protect.s2k = *s2k;
       rc = protect_secret_key (sk, dek);
       if (rc)
         log_error ("protect_secret_key failed: %s\n", gpg_strerror (rc) );
     }
-
+  else
+	  printf("not protecting\n");
   return rc;
 }
 
@@ -1528,6 +1533,116 @@ gen_rsa (int algo, unsigned nbits, KBNODE pub_root, KBNODE sec_root, DEK *dek,
   return 0;
 }
 
+/*
+ * Generate an NTRU key.
+ */
+static int
+gen_ntru (int algo, unsigned nbits, KBNODE pub_root, KBNODE sec_root, DEK *dek,
+         STRING2KEY *s2k, PKT_secret_key **ret_sk,
+         u32 timestamp, u32 expireval, int is_subkey)
+{
+  int rc;
+  PACKET *pkt;
+  PKT_secret_key *sk;
+  PKT_public_key *pk;
+  gcry_sexp_t s_parms, s_key;
+
+  assert (is_NTRU(algo));
+
+  printf("dimension %d\n", nbits);
+  if (!nbits)
+    nbits = 439;	//	default NTRU dimension for 128 bits security
+
+  rc = gcry_sexp_build (&s_parms, NULL,
+                        "(genkey(ntru(n439)))");
+//  gcry_sexp_dump(s_parms);
+
+  if (rc)
+    log_bug ("gcry_sexp_build failed: %s\n", gpg_strerror (rc));
+
+//  gcry_sexp_dump(s_parms);
+  rc = gcry_pk_genkey (&s_key, s_parms);
+  gcry_sexp_release (s_parms);
+  if (rc)
+    {
+      log_error ("gcry_pk_genkey failed: %s\n", gpg_strerror (rc) );
+      return rc;
+    }
+//  gcry_sexp_dump(s_key);
+
+  sk = xmalloc_clear( sizeof *sk );
+  pk = xmalloc_clear( sizeof *pk );
+  sk->timestamp = pk->timestamp = timestamp;
+  sk->version = pk->version = 4;
+  if (expireval)
+    {
+      sk->expiredate = pk->expiredate = sk->timestamp + expireval;
+    }
+  sk->pubkey_algo = pk->pubkey_algo = algo;
+
+  pk->ntru_pkey = gcry_sexp_find_token(s_key, "public-key", 0);
+  sk->ntru_skey = gcry_sexp_find_token(s_key, "secret-key", 0);
+
+//  gcry_sexp_dump(s_key);
+//  gcry_sexp_dump(pk->ntru_pkey);
+
+
+  sk->is_protected = 0;
+  sk->protect.algo = 0;
+
+
+  if( ret_sk ) /* return an unprotected version of the sk */
+  {
+	  printf("return sk unprotected\n");
+	  ret_sk = NULL;
+  }
+
+  rc = genhelp_protect (dek, s2k, sk);
+  if (rc)
+    {
+      free_public_key (pk);
+      free_secret_key (sk);
+      return rc;
+    }
+
+  printf("done protection\n");
+//  printf("string 2 key%d,\n",s2k->hash_algo);
+  pkt = xmalloc_clear(sizeof *pkt);
+  pkt->pkttype = is_subkey ? PKT_PUBLIC_SUBKEY : PKT_PUBLIC_KEY;
+  pkt->pkt.public_key = pk;
+
+//  gcry_sexp_dump(pkt->pkt.public_key->ntru_pkey);
+//  KBNODE newnode =   new_kbnode( pkt );
+
+//  printf("new node algo %d\n",newnode->pkt->pkt.public_key->pubkey_algo);
+//  gcry_sexp_dump(newnode->pkt->pkt.public_key->ntru_pkey);
+  add_kbnode(pub_root, new_kbnode( pkt ));
+//  gcry_mpi_dump(pub_root->next->pkt->pkt.public_key->pkey[0]);
+
+ /* int counter =0;
+      KBNODE n1;
+  for (n1=pub_root; n1->next; n1 = n1->next)
+	  counter ++;
+  printf("counter %d", counter);
+*/
+  printf("algo %d\n",pub_root->next->pkt->pkt.public_key->pubkey_algo);
+  printf("algo %d\n",pub_root->next->next->pkt->pkt.public_key->pubkey_algo);
+  printf("algo %d\n",pub_root->next->next->next->pkt->pkt.public_key->pubkey_algo);
+  printf("algo %d\n",pub_root->next->next->next->next->pkt->pkt.public_key->pubkey_algo);
+//  gcry_sexp_dump(pub_root->next->next->next->next->pkt->pkt.public_key->ntru_pkey);
+
+
+  pkt = xmalloc_clear(sizeof *pkt);
+  pkt->pkttype = is_subkey ? PKT_SECRET_SUBKEY : PKT_SECRET_KEY;
+  pkt->pkt.secret_key = sk;
+  add_kbnode(sec_root, new_kbnode( pkt ));
+
+
+  gcry_sexp_release (s_key);
+  printf("finished ntru key gen\n");
+  return 0;
+}
+
 
 /****************
  * check valid days:
@@ -1726,6 +1841,7 @@ ask_algo (int addmode, int *r_subkey_algo, unsigned int *r_usage)
       tty_printf (_("   (%d) RSA (set your own capabilities)\n"), 8 );
     }
 
+  tty_printf (_("   (%d) DSA and NTRU\n"), 9 );
   for(;;)
     {
       *r_usage = 0;
@@ -1782,6 +1898,12 @@ ask_algo (int addmode, int *r_subkey_algo, unsigned int *r_usage)
           *r_usage = ask_key_flags (algo, addmode);
           break;
 	}
+      else if ((algo == 9 || !strcmp (answer, "ntru")|| !strcmp (answer, "dsa+ntru")))
+      {
+        algo = PUBKEY_ALGO_DSA;
+        *r_subkey_algo = PUBKEY_ALGO_NTRU;
+        break;
+	}
       else
         tty_printf (_("Invalid selection.\n"));
 
@@ -1831,6 +1953,11 @@ ask_keysize (int algo, unsigned int primary_keysize)
     case PUBKEY_ALGO_RSA:
       min=1024;
       break;
+    case PUBKEY_ALGO_NTRU:
+      min=439;
+      def=439;
+      max=743;
+      break;
     }
 
   tty_printf(_("%s keys may be between %u and %u bits long.\n"),
@@ -1867,6 +1994,16 @@ ask_keysize (int algo, unsigned int primary_keysize)
       if (!autocomp)
         tty_printf(_("rounded up to %u bits\n"), nbits );
     }
+  else if( algo == PUBKEY_ALGO_NTRU )
+      {
+/*       if (nbits>439&&nbits<593)
+           nbits = 593;
+         if (nbits>593)
+           nbits = 743;
+         if (nbits!=439&&nbits!=593&&nbits!=743)
+           tty_printf(_("rounded up to %u bits\n"), nbits );*/
+         nbits = 439;
+      }
   else if( (nbits % 32) )
     {
       nbits = ((nbits + 31) / 32) * 32;
@@ -2358,6 +2495,21 @@ do_create (int algo, unsigned int nbits, KBNODE pub_root, KBNODE sec_root,
   else if( algo == PUBKEY_ALGO_RSA )
     rc = gen_rsa(algo, nbits, pub_root, sec_root, dek, s2k, sk,
                  timestamp, expiredate, is_subkey);
+  else if( algo == PUBKEY_ALGO_NTRU ){
+	    rc = gen_ntru(algo, nbits, pub_root, sec_root, dek, s2k, sk,
+	                 timestamp, expiredate, is_subkey);
+/*	    printf("after gen_ntru\n");
+	    gcry_mpi_dump(pub_root->next->pkt->pkt.public_key->pkey[0]);
+	    gcry_sexp_dump(pub_root->next->pkt->pkt.public_key->ntru_pkey);
+	    gcry_mpi_dump(pub_root->next->next->next->next->pkt->pkt.public_key->pkey[0]);
+	    gcry_sexp_dump(pub_root->next->next->next->next->pkt->pkt.public_key->ntru_pkey);
+*/
+
+        printf("finished subkey do creat \n");
+
+
+//	    printf("\ndek algorithm %d\n", dek->algo);
+  }
   else
     BUG();
 
@@ -2439,6 +2591,8 @@ get_parameter_algo( struct para_data_s *para, enum para_name key,
   else if (!strcmp (r->u.value, "ELG-E")
            || !strcmp (r->u.value, "ELG"))
     i = GCRY_PK_ELG_E;
+  else if (!strcmp (r->u.value, "dsa+ntru"))
+	i = GCRY_PK_NTRU;
   else
     i = gcry_pk_map_name (r->u.value);
 
@@ -2627,6 +2781,7 @@ proc_parameter_file( struct para_data_s *para, const char *fname,
   else
     {
       r = get_parameter (para, pKEYUSAGE);
+      printf("algo: %d\n", algo);
       if (r && (r->u.usage & ~openpgp_pk_algo_usage (algo)))
         {
           log_error ("%s:%d: specified Key-Usage not allowed for algo %d\n",
@@ -3163,7 +3318,8 @@ generate_keypair (const char *fname, const char *card_serialno,
           sprintf( r->u.value, "%d", algo );
           r->next = para;
           para = r;
-	  nbits = ask_keysize (algo, 0);
+	  nbits = ask_keysize (algo, 1);
+	  printf("algorithm: %d, subkey algorithm %d\n", algo, subkey_algo);
 	  r = xmalloc_clear( sizeof *r + 20 );
 	  r->key = pKEYLENGTH;
 	  sprintf( r->u.value, "%u", nbits);
@@ -3389,6 +3545,8 @@ do_generate_keypair (struct para_data_s *para,
   int did_sub = 0;
   u32 timestamp;
 
+  printf("start key gen\n");
+
   if( outctrl->dryrun )
     {
       log_info("dry-run mode - key generation skipped\n");
@@ -3504,6 +3662,9 @@ do_generate_keypair (struct para_data_s *para,
                       &pri_sk,
                       timestamp,
                       get_parameter_u32( para, pKEYEXPIRE ), 0 );
+      printf("finished do_create\n");
+      gcry_mpi_dump(pub_root->next->pkt->pkt.public_key->pkey[0]);
+      printf("\n");
     }
   else
     {
@@ -3540,6 +3701,7 @@ do_generate_keypair (struct para_data_s *para,
      actually an encryption type.  In this case, the auth key is an
      RSA key so it succeeds. */
 
+
   if (!rc && card && get_parameter (para, pAUTHKEYTYPE))
     {
       rc = gen_card_key (PUBKEY_ALGO_RSA, 3, 0, pub_root, sec_root, NULL,
@@ -3554,10 +3716,15 @@ do_generate_keypair (struct para_data_s *para,
                                PUBKEY_USAGE_AUTH, timestamp);
     }
 
+  printf("keybinding? %d, %d\n",rc, para->next->key);
   if( !rc && get_parameter( para, pSUBKEYTYPE ) )
     {
       if (!card)
         {
+          printf("start sub key generation:\n");
+          printf("algo: %d \n",get_parameter_algo( para, pSUBKEYTYPE, NULL ) );
+          printf("uint: %d \n",get_parameter_uint( para, pSUBKEYLENGTH ));
+
           rc = do_create( get_parameter_algo( para, pSUBKEYTYPE, NULL ),
                           get_parameter_uint( para, pSUBKEYLENGTH ),
                           pub_root, sec_root,
@@ -3566,6 +3733,11 @@ do_generate_keypair (struct para_data_s *para,
                           &sub_sk,
                           timestamp,
                           get_parameter_u32( para, pSUBKEYEXPIRE ), 1 );
+
+          printf("sub_sk?\n");
+          if (sub_sk==NULL)
+              printf("is null\n");
+
         }
       else
         {
@@ -3590,6 +3762,9 @@ do_generate_keypair (struct para_data_s *para,
             }
         }
 
+      printf("start key binding\n");
+
+
       if( !rc )
         rc = write_keybinding(pub_root, pub_root, pri_sk, sub_sk,
                               get_parameter_uint (para, pSUBKEYUSAGE),
@@ -3600,9 +3775,10 @@ do_generate_keypair (struct para_data_s *para,
                               timestamp);
       did_sub = 1;
     }
-
+  printf("finished self-binding sub-key\n");
   if (!rc && outctrl->use_files)  /* Direct write to specified files.  */
     {
+	  printf("writing to file\n");
       rc = write_keyblock( outctrl->pub.stream, pub_root );
       if (rc)
         log_error ("can't write public key: %s\n", g10_errstr(rc) );
@@ -3615,10 +3791,12 @@ do_generate_keypair (struct para_data_s *para,
     }
   else if (!rc) /* Write to the standard keyrings.  */
     {
+
       KEYDB_HANDLE pub_hd = keydb_new (0);
       KEYDB_HANDLE sec_hd = keydb_new (1);
 
       rc = keydb_locate_writable (pub_hd, NULL);
+
       if (rc)
         log_error (_("no writable public keyring found: %s\n"),
                    g10_errstr (rc));
@@ -3642,7 +3820,7 @@ do_generate_keypair (struct para_data_s *para,
             log_info (_("writing secret key to `%s'\n"),
                       keydb_get_resource_name (sec_hd));
         }
-
+      printf("inserting key block\n");
       if (!rc)
         {
           rc = keydb_insert_keyblock (pub_hd, pub_root);
@@ -3650,7 +3828,7 @@ do_generate_keypair (struct para_data_s *para,
             log_error (_("error writing public keyring `%s': %s\n"),
                        keydb_get_resource_name (pub_hd), g10_errstr(rc));
         }
-
+      printf("finish inserting public key\n");
       if (!rc)
         {
           rc = keydb_insert_keyblock (sec_hd, sec_root);
@@ -3658,10 +3836,10 @@ do_generate_keypair (struct para_data_s *para,
             log_error (_("error writing secret keyring `%s': %s\n"),
                        keydb_get_resource_name (pub_hd), g10_errstr(rc));
         }
-
+      printf("finish inserting secret key\n");
       keydb_release (pub_hd);
       keydb_release (sec_hd);
-
+      printf("finished writing?\n");
       if (!rc)
         {
           int no_enc_rsa;
@@ -3718,13 +3896,30 @@ do_generate_keypair (struct para_data_s *para,
       print_status_key_created (did_sub? 'B':'P', pk,
                                 get_parameter_value (para, pHANDLE));
     }
+
+
+  KBNODE tmp_node;
+  int counter =0;
+  tmp_node = pub_root;
+  counter = 0;
+  for(tmp_node=pub_root; tmp_node->next; tmp_node = tmp_node->next)
+  {
+	  counter++;
+	  printf("packet no % d, packet type %d \n", counter, tmp_node->next->pkt->pkttype);
+  }
+  printf("nodes: %d\n", counter);
+  printf("finished subkey do creat \n");
+
   release_kbnode( pub_root );
   release_kbnode( sec_root );
-
+  printf("keys released\n");
   if (pri_sk && !card)        /* The unprotected secret key unless we */
     free_secret_key (pri_sk); /* have a shallow copy in card mode. */
   if (sub_sk)
     free_secret_key(sub_sk);
+
+
+  printf("end key generation\n");
 }
 
 
@@ -3746,6 +3941,8 @@ generate_subkeypair (KBNODE pub_keyblock, KBNODE sec_keyblock)
   u32 cur_time;
   int ask_pass = 0;
   int canceled;
+
+  printf("======in generate_subkeypair function ============\n");
 
   /* Break out the primary secret key.  */
   node = find_kbnode( sec_keyblock, PKT_SECRET_KEY );

@@ -73,6 +73,7 @@ build_packet( IOBUF out, PACKET *pkt )
 	log_debug("build_packet() type=%d\n", pkt->pkttype );
     assert( pkt->pkt.generic );
 
+    printf("build packet\n")	;
     switch( (pkttype = pkt->pkttype) )
       {
       case PKT_PLAINTEXT: new_ctb = pkt->pkt.plaintext->new_ctb; break;
@@ -174,6 +175,38 @@ mpi_write (iobuf_t out, gcry_mpi_t a)
   return rc;
 }
 
+/*
+ * Write the sexp A to OUT.
+ */
+static int
+sexp_write (iobuf_t out, gcry_sexp_t a)
+{
+	int max_len = 2000;
+  char buffer[max_len];
+  size_t nbytes;
+  int rc;
+
+  rc = gcry_sexp_sprint (a, 1, buffer, max_len);
+
+  if( !rc )
+  {
+	  nbytes = 0;
+	  while(buffer[nbytes]!=0)
+	  {
+		  printf("%c",buffer[nbytes]);
+		  nbytes++;
+	  }
+	  rc = iobuf_write( out, buffer, nbytes );
+  }
+  else if (gpg_err_code(rc) == GPG_ERR_TOO_SHORT )
+    {
+      log_info ("mpi too large (%u bits)\n", gcry_mpi_get_nbits (a));
+      /* The buffer was too small. We better tell the user about the MPI. */
+      rc = gpg_error (GPG_ERR_TOO_LARGE);
+    }
+
+  return rc;
+}
 
 
 /****************
@@ -250,12 +283,13 @@ do_public_key( IOBUF out, int ctb, PKT_public_key *pk )
   int rc = 0;
   int n, i;
   IOBUF a = iobuf_temp();
-
+printf("do public key\n");
   if ( !pk->version )
     iobuf_put( a, 3 );
   else
     iobuf_put( a, pk->version );
   write_32(a, pk->timestamp );
+  printf("finished timestamp\n");
   if ( pk->version < 4 )
     {
       u16 ndays;
@@ -266,11 +300,20 @@ do_public_key( IOBUF out, int ctb, PKT_public_key *pk )
       write_16(a, ndays );
     }
   iobuf_put (a, pk->pubkey_algo );
+  printf("finished algo\n");
   n = pubkey_get_npkey ( pk->pubkey_algo );
+  printf("number of keys %d\n", n);
   if ( !n )
     write_fake_data( a, pk->pkey[0] );
-  for (i=0; i < n && !rc ; i++ )
-    rc = mpi_write(a, pk->pkey[i] );
+
+  if ( pk->pubkey_algo != PUBKEY_ALGO_NTRU){
+
+    rc = sexp_write(a, pk->ntru_pkey);
+  }
+  else
+  {
+
+  }
 
   if (!rc)
     {
