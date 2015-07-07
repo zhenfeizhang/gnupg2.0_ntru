@@ -1369,7 +1369,7 @@ write_keyblock (IOBUF fp, KBNODE keyblock)
 int counter =0;
   while ( (node = walk_kbnode (keyblock, &kbctx, 0)) )
     {
-	  printf("node: %d\n", counter);
+	  printf("node: %d, type: %d\n", counter, node->pkt->pkttype);
 	  counter++;
       if (node->pkt->pkttype == PKT_RING_TRUST)
         continue; /* we write it later on our own */

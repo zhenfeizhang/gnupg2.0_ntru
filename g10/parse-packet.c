@@ -426,7 +426,7 @@ parse( IOBUF inp, PACKET *pkt, int onlykeypkts, off_t *retpos,
 	    rc = gpg_error (GPG_ERR_INV_PACKET);
 	    goto leave;
 	}
-
+    printf("pkt type: %d\n", pkttype);
 /* The follwing code has been here for ages (2002-08-30) but it is
    clearly wrong: For example passing a 0 as second argument to
    iobuf_set_partial_block_mode stops the partial block mode which we
@@ -562,6 +562,8 @@ parse( IOBUF inp, PACKET *pkt, int onlykeypkts, off_t *retpos,
 		   iobuf_id(inp), pkttype, pktlen, new_ctb?" (new_ctb)":"" );
 #endif
     }
+
+
     pkt->pkttype = pkttype;
     rc = G10ERR_UNKNOWN_PACKET; /* default error */
     switch( pkttype ) {

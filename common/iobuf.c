@@ -2080,6 +2080,7 @@ iobuf_write (iobuf_t a, const void *buffer, unsigned int buflen)
   if (a->directfp)
     BUG ();
 
+//  printf("start writing %d\n", buflen)
   do
     {
       if (buflen && a->d.len < a->d.size)
@@ -2100,6 +2101,8 @@ iobuf_write (iobuf_t a, const void *buffer, unsigned int buflen)
 	}
     }
   while (buflen);
+
+//  printf("finished writing\n");
   return 0;
 }
 

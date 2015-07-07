@@ -86,7 +86,7 @@ build_packet( IOBUF out, PACKET *pkt )
 	break;
       default: break;
       }
-
+    printf("here?\n");
     if( new_ctb || pkttype > 15 ) /* new format */
 	ctb = 0xc0 | (pkttype & 0x3f);
     else
@@ -107,12 +107,12 @@ build_packet( IOBUF out, PACKET *pkt )
 	  dropped (in the public key?) this is a no-op.
 	*/
 	break;
-      case PKT_PUBLIC_SUBKEY:
-      case PKT_PUBLIC_KEY:
+      case PKT_PUBLIC_SUBKEY:printf("public subkey\n");
+      case PKT_PUBLIC_KEY: printf("public key\n");
 	rc = do_public_key( out, ctb, pkt->pkt.public_key );
 	break;
-      case PKT_SECRET_SUBKEY:
-      case PKT_SECRET_KEY:
+      case PKT_SECRET_SUBKEY:printf("private subkey\n");
+      case PKT_SECRET_KEY:printf("private key\n");
 	rc = do_secret_key( out, ctb, pkt->pkt.secret_key );
 	break;
       case PKT_SYMKEY_ENC:
@@ -185,10 +185,11 @@ sexp_write (iobuf_t out, gcry_sexp_t a)
   char buffer[max_len];
   size_t nbytes;
   int rc;
+  int len;
 
-  rc = gcry_sexp_sprint (a, 1, buffer, max_len);
-
-  if( !rc )
+  len = gcry_sexp_sprint (a, 1, buffer, max_len);
+  printf("after sexp sprint %d \n", len);
+  if( len!=0 )
   {
 	  nbytes = 0;
 	  while(buffer[nbytes]!=0)
@@ -196,7 +197,8 @@ sexp_write (iobuf_t out, gcry_sexp_t a)
 		  printf("%c",buffer[nbytes]);
 		  nbytes++;
 	  }
-	  rc = iobuf_write( out, buffer, nbytes );
+	  rc = iobuf_write( out, buffer, len );
+	  printf("\n finished writing buf\n");
   }
   else if (gpg_err_code(rc) == GPG_ERR_TOO_SHORT )
     {
@@ -283,13 +285,13 @@ do_public_key( IOBUF out, int ctb, PKT_public_key *pk )
   int rc = 0;
   int n, i;
   IOBUF a = iobuf_temp();
-printf("do public key\n");
+
   if ( !pk->version )
     iobuf_put( a, 3 );
   else
     iobuf_put( a, pk->version );
   write_32(a, pk->timestamp );
-  printf("finished timestamp\n");
+
   if ( pk->version < 4 )
     {
       u16 ndays;
@@ -300,27 +302,28 @@ printf("do public key\n");
       write_16(a, ndays );
     }
   iobuf_put (a, pk->pubkey_algo );
-  printf("finished algo\n");
-  n = pubkey_get_npkey ( pk->pubkey_algo );
-  printf("number of keys %d\n", n);
-  if ( !n )
-    write_fake_data( a, pk->pkey[0] );
 
-  if ( pk->pubkey_algo != PUBKEY_ALGO_NTRU){
+
+
+  if ( pk->pubkey_algo == PUBKEY_ALGO_NTRU){
 
     rc = sexp_write(a, pk->ntru_pkey);
   }
   else
   {
+	  n = pubkey_get_npkey ( pk->pubkey_algo );
 
+	  if ( !n )
+	    write_fake_data( a, pk->pkey[0] );
   }
 
   if (!rc)
     {
       write_header2 (out, ctb, iobuf_get_temp_length(a), pk->hdrbytes);
+      printf("write output\n");
       rc = iobuf_write_temp ( out, a );
     }
-
+  printf("finished writing\n");
   iobuf_close(a);
   return rc;
 }
@@ -353,6 +356,13 @@ do_secret_key( IOBUF out, int ctb, PKT_secret_key *sk )
 
   iobuf_put (a, sk->pubkey_algo );
 
+
+  if (sk->pubkey_algo == PUBKEY_ALGO_NTRU)
+  {
+	    rc = sexp_write(a, sk->ntru_skey);
+  }
+  else
+  {
   /* Get number of secret and public parameters.  They are held in one
      array first the public ones, then the secret ones.  */
   nskey = pubkey_get_nskey ( sk->pubkey_algo );
@@ -465,6 +475,7 @@ do_secret_key( IOBUF out, int ctb, PKT_secret_key *sk )
           goto leave;
       write_16 (a, sk->csum );
     }
+  } // algo != PUBKEY_ALGO_NTRU
 
  leave:
   if (!rc)
